@@ -1,0 +1,38 @@
+name: realtime_shindo
+channels:
+  - pytorch
+  - pyg
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pytorch>=2.0.0
+  - pytorch-cuda>=11.7
+  - pyg
+  - pytorch-scatter
+  - pytorch-sparse
+  - lightning
+  - typer
+  - loguru
+  - tqdm
+  - ipython
+  - jupyterlab
+  - matplotlib
+  - notebook
+  - numpy
+  - pandas
+  - scikit-learn
+  - ruff
+  - pip
+  - pip:
+      - einops
+      - hydra-core
+      - omegaconf
+      - PyYAML
+      - scipy
+      - tables
+      - torchmetrics>=0.7
+      - python-dotenv
+      - mkdocs
+      - -e .
