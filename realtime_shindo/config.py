@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -30,3 +31,6 @@ try:
     logger.add(lambda msg: tqdm.write(msg, end=""), colorize=True)
 except ModuleNotFoundError:
     pass
+
+KYOSHIN_USER = os.getenv("KYOSHIN_USER")
+KYOSHIN_PASSWORD = os.getenv("KYOSHIN_PASSWORD")
