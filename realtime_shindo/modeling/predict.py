@@ -108,7 +108,7 @@ def main(
 
     # 3. Load predictor directly from checkpoint
     logger.info("Loading predictor from checkpoint...")
-    predictor = CustomPredictor.load_from_checkpoint(checkpoint_path)
+    predictor = CustomPredictor.load_from_checkpoint(checkpoint_path, strict=False)
     predictor.freeze()
 
     # 4. Run prediction

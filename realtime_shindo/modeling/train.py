@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 from loguru import logger
@@ -28,7 +27,7 @@ def main(
     net: str = typer.Option("knet", help="Network to use: 'knet' or 'kik'."),
     log_dir: Path = typer.Option(MODELS_DIR, help="Directory for logs and model checkpoints."),
     epochs: int = typer.Option(100, help="Number of training epochs."),
-    batch_size: int = typer.Option(64, help="Batch size for training."),
+    batch_size: int = typer.Option(128, help="Batch size for training."),
     learning_rate: float = typer.Option(0.001, help="Initial learning rate."),
     gpus: int = typer.Option(
         -1 if torch.cuda.is_available() else 0,
@@ -48,10 +47,8 @@ def main(
     """
     Train a spatio-temporal forecasting model on the Realtime Shindo dataset.
     """
-    logger.info(f"Setting up training for network: {net}")
 
     # 1. Dataset and DataModule setup
-    logger.info("Loading dataset...")
     dataset = RealtimeShindo(net=net)
     connectivity = dataset.get_connectivity(
         threshold=0.1, include_self=False, normalize_axis=1, layout="edge_index"
@@ -68,11 +65,9 @@ def main(
     scalers = {"target": StandardScaler(axis=(0, 1))}
     splitter = TemporalSplitter(val_len=val_len, test_len=test_len)
 
-    num_workers = 0
-    if gpus != 0:
-        num_gpus = torch.cuda.device_count() if gpus == -1 else gpus
-        num_cpus = os.cpu_count() or 1
-        num_workers = num_cpus // num_gpus if num_gpus > 0 else num_cpus
+    num_workers = 4
+    if gpus == 0:
+        num_workers = 0
 
     dm = SpatioTemporalDataModule(
         dataset=torch_dataset,
