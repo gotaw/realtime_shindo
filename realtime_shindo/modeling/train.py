@@ -14,6 +14,10 @@ from realtime_shindo.config import MODELS_DIR
 from realtime_shindo.data import CustomSpatioTemporalDataset
 from realtime_shindo.datasets import RealtimeShindo
 from realtime_shindo.engines import CustomPredictor
+from realtime_shindo.metrics.torch import (
+    MaskedWeightedMAELoss,
+    compute_lds_weights,
+)
 from realtime_shindo.nn import custom_models
 
 # PyTorch 2.0+ performance optimization
@@ -92,7 +96,28 @@ def main(
     }
 
     # 3. Loss, metrics, and predictor setup
-    loss_fn = MaskedMAE()
+    y_train = dm.torch_dataset.target
+    mask_train = dm.torch_dataset.mask
+
+    if "t" in dm.torch_dataset.patterns.get("target", ""):
+        y_train = y_train[dm.train_slice]
+    if mask_train is not None and "t" in dm.torch_dataset.patterns.get("mask", ""):
+        mask_train = mask_train[dm.train_slice]
+
+    # Pre-compute weights using Label Distribution Smoothing (LDS)
+    lds_weights = compute_lds_weights(
+        y=y_train,
+        mask=mask_train,
+        n_bins=70,
+        sigma=2.0,
+        kernel_size=9,
+        scaling_factor=dataset.SCALING_FACTOR,
+    )
+
+    loss_fn = MaskedWeightedMAELoss(
+        weights=lds_weights, n_bins=70, scaling_factor=dataset.SCALING_FACTOR
+    )
+
     metrics = {
         "mae": MaskedMAE(),
         "mse": MaskedMSE(),
