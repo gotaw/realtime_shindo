@@ -2,7 +2,6 @@ import os
 
 import numpy as np
 import pandas as pd
-from tsl import logger
 from tsl.datasets.prototypes import DatetimeDataset
 from tsl.ops.similarities import gaussian_kernel
 
@@ -10,25 +9,8 @@ from realtime_shindo.config import PROCESSED_DATA_DIR
 
 
 class RealtimeShindo(DatetimeDataset):
-    r"""The Realtime Shindo dataset, consisting of seismic intensity readings
-    from K-NET stations in Japan.
-
-    This dataset is composed of numerous discontinuous earthquake events,
-    concatenated together. The data is recorded at a 1-second frequency.
-
-    Dataset information (for 'knet'):
-        + Time steps: Variable (event-based)
-        + Nodes: 1017
-        + Channels: 1 (Seismic Intensity)
-        + Sampling rate: 1 second
-        + Missing values: All non-positive values (<= 0) are treated as missing.
-
-    Static attributes:
-        + :obj:`dist`: :math:`N \times N` matrix of node pairwise distances in km.
-    """
-
     similarity_options = {"distance"}
-    
+
     IMPUTATION_VALUE = 0.0
     SCALING_FACTOR = 10.0
 
@@ -42,7 +24,7 @@ class RealtimeShindo(DatetimeDataset):
             freq=freq,
             similarity_score="distance",
             temporal_aggregation="max",
-            name=f"RealtimeShindo-{net.upper()}",
+            name=f"RealtimeShindo-{net}",
         )
         self.add_covariate("dist", dist, pattern="n n")
 
@@ -63,11 +45,6 @@ class RealtimeShindo(DatetimeDataset):
         return os.path.join(self.root_dir, filename)
 
     def build(self) -> None:
-        """
-        Processes the raw distance CSV into a NumPy matrix.
-        Assumes that dataset.py has already been run to generate the required files.
-        """
-        logger.info(f"Building distance matrix for {self.net}...")
         raw_dist_path = self._get_required_path(f"distances_{self.net}.csv")
         distances = pd.read_csv(raw_dist_path)
 
@@ -88,7 +65,6 @@ class RealtimeShindo(DatetimeDataset):
 
         path = self._get_required_path(f"dist_{self.net}.npy")
         np.save(path, dist)
-        logger.info(f"Distance matrix saved to {path}")
 
     def load_raw(self):
         dist_path = self._get_required_path(f"dist_{self.net}.npy")
@@ -113,7 +89,7 @@ class RealtimeShindo(DatetimeDataset):
         mask = is_valid_filtered.to_numpy(dtype="uint8")
 
         df_processed = df_filtered.where(is_valid_filtered, self.IMPUTATION_VALUE)
-        
+
         df_final = (df_processed / self.SCALING_FACTOR).astype(np.float32)
 
         return df_final, dist, mask

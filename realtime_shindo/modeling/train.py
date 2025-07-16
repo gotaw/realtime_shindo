@@ -6,7 +6,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 import torch
 from tsl.data.datamodule import SpatioTemporalDataModule, TemporalSplitter
-from tsl.data.preprocessing import StandardScaler
+from tsl.data.preprocessing import MinMaxScaler
 from tsl.metrics.torch import MaskedMAE, MaskedMAPE, MaskedMSE
 import typer
 
@@ -51,7 +51,7 @@ def main(
     # 1. Dataset and DataModule setup
     dataset = RealtimeShindo(net=net)
     connectivity = dataset.get_connectivity(
-        threshold=0.1, include_self=False, normalize_axis=1, layout="edge_index"
+        threshold=0.1, include_self=True, normalize_axis=1, layout="edge_index"
     )
     torch_dataset = CustomSpatioTemporalDataset(
         target=dataset.dataframe(),
@@ -62,7 +62,7 @@ def main(
         stride=stride,
     )
 
-    scalers = {"target": StandardScaler(axis=(0, 1))}
+    scalers = {"target": MinMaxScaler(axis=(0, 1))}
     splitter = TemporalSplitter(val_len=val_len, test_len=test_len)
 
     num_workers = 4
